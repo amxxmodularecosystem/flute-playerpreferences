@@ -2,7 +2,7 @@
 
 namespace Flute\Modules\PlayerPreferences\Packages;
 
-use Flute\Core\Modules\Admin\Support\AbstractAdminPackage;
+use Flute\Admin\Support\AbstractAdminPackage;
 use Flute\Modules\PlayerPreferences\Packages\Screens\PlayerPreferencesListScreen;
 use Flute\Modules\PlayerPreferences\Packages\Screens\PlayerPreferencesUserScreen;
 

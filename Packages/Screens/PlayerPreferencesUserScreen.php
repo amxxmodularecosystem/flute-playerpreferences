@@ -2,11 +2,11 @@
 
 namespace Flute\Modules\PlayerPreferences\Packages\Screens;
 
+use Flute\Admin\Platform\Fields\TD;
 use Flute\Admin\Platform\Layouts\LayoutFactory;
-use Flute\Admin\Platform\Layouts\TD;
 use Flute\Admin\Platform\Screen;
 use Flute\Core\Database\Entities\User;
-use Flute\Modules\PlayerPreferences\Database\Entities\PlayerPreference;
+use Flute\Modules\PlayerPreferences\database\Entities\PlayerPreference;
 
 class PlayerPreferencesUserScreen extends Screen
 {

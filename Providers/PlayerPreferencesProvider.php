@@ -17,10 +17,11 @@ class PlayerPreferencesProvider extends ModuleServiceProvider
 
     public function boot(\DI\Container $container): void
     {
-        if (is_admin_path() && user()->can('admin')) {
+        $this->bootstrapModule();
+        $this->loadEntities();
+
+        if (is_admin_path()) {
             $this->loadPackage(new PlayerPreferencesPackage());
         }
-
-        $this->bootstrapModule();
     }
 }

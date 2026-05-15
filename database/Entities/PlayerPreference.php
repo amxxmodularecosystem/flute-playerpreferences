@@ -1,6 +1,6 @@
 <?php
 
-namespace Flute\Modules\PlayerPreferences\Database\Entities;
+namespace Flute\Modules\PlayerPreferences\database\Entities;
 
 use Cycle\ActiveRecord\ActiveRecord;
 use Cycle\Annotated\Annotation\Column;

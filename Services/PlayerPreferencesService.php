@@ -5,7 +5,7 @@ namespace Flute\Modules\PlayerPreferences\Services;
 use Flute\Core\Database\Entities\SocialNetwork;
 use Flute\Core\Database\Entities\User;
 use Flute\Core\Database\Entities\UserSocialNetwork;
-use Flute\Modules\PlayerPreferences\Database\Entities\PlayerPreference;
+use Flute\Modules\PlayerPreferences\database\Entities\PlayerPreference;
 
 class PlayerPreferencesService
 {
@@ -21,10 +21,12 @@ class PlayerPreferencesService
             return null;
         }
 
-        $link = rep(UserSocialNetwork::class)->findOne([
-            'value'         => $steamid64,
-            'socialNetwork' => $steamNetwork,
-        ]);
+        $link = rep(UserSocialNetwork::class)
+            ->select()
+            ->where('value', $steamid64)
+            ->where('socialNetwork_id', $steamNetwork->id)
+            ->load('user')
+            ->fetchOne();
 
         return $link?->user;
     }
@@ -68,7 +70,6 @@ class PlayerPreferencesService
             $map[$row->key] = $row;
         }
 
-        $t = transaction();
         foreach ($incoming as $key => $value) {
             if (isset($map[$key])) {
                 $row = $map[$key];
@@ -79,9 +80,8 @@ class PlayerPreferencesService
                 $row->key      = (string) $key;
             }
             $row->value = json_encode($value);
-            $t->persist($row);
+            $row->save();
         }
-        $t->run();
 
         $settings = [];
         foreach ($map as $key => $row) {
