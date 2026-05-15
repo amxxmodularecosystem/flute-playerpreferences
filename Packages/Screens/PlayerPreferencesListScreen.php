@@ -6,6 +6,7 @@ use Flute\Admin\Platform\Fields\TD;
 use Flute\Admin\Platform\Layouts\Filters;
 use Flute\Admin\Platform\Layouts\LayoutFactory;
 use Flute\Admin\Platform\Screen;
+use Flute\Core\Database\Entities\Server;
 use Flute\Modules\PlayerPreferences\database\Entities\PlayerPreference;
 
 class PlayerPreferencesListScreen extends Screen
@@ -14,11 +15,17 @@ class PlayerPreferencesListScreen extends Screen
     public ?string $description = 'player-preferences.admin.list_description';
     public ?string $permission  = 'admin.player-preferences';
 
-    public array $items         = [];
+    public array $items       = [];
+    public array $serverNames = [];
     public array $serverOptions = [];
 
     public function mount(): void
     {
+        $servers = rep(Server::class)->findAll([]);
+        foreach ($servers as $server) {
+            $this->serverNames[$server->id] = $server->name;
+        }
+
         $rows = rep(PlayerPreference::class)
             ->select()
             ->load('user')
@@ -28,7 +35,7 @@ class PlayerPreferencesListScreen extends Screen
         // Collect distinct server IDs for the filter dropdown (before filtering)
         $serverIds = [];
         foreach ($rows as $row) {
-            $serverIds[$row->serverId] = 'Server ' . $row->serverId;
+            $serverIds[$row->serverId] = $this->serverNames[$row->serverId] ?? ('Server ' . $row->serverId);
         }
         ksort($serverIds);
         $this->serverOptions = $serverIds;
@@ -106,7 +113,7 @@ class PlayerPreferencesListScreen extends Screen
                     )),
 
                 TD::make('serverId', __('player-preferences.admin.col_server'))
-                    ->render(fn ($item) => $item->serverId),
+                    ->render(fn ($item) => $this->serverNames[$item->serverId] ?? ('Server ' . $item->serverId)),
 
                 TD::make('count', __('player-preferences.admin.col_count'))
                     ->render(fn ($item) => $item->count),
