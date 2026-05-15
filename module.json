@@ -1,0 +1,8 @@
+{
+    "name": "PlayerPreferences",
+    "version": "1.0.0",
+    "description": "API for storing and retrieving per-player game server preferences",
+    "providers": [
+        "Flute\\Modules\\PlayerPreferences\\Providers\\PlayerPreferencesProvider"
+    ]
+}
