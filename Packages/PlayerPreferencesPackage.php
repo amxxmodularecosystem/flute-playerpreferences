@@ -15,7 +15,13 @@ class PlayerPreferencesPackage extends AbstractAdminPackage
 
     public function getPermissions(): array
     {
-        return ['admin', 'admin.player-preferences'];
+        return [
+            'admin',
+            'admin.player-preferences',
+            'api.player-preferences',
+            'api.player-preferences.read',
+            'api.player-preferences.write',
+        ];
     }
 
     public function getMenuItems(): array

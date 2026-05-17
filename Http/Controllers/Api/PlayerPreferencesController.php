@@ -6,6 +6,7 @@ use Flute\Core\Router\Annotations\Get;
 use Flute\Core\Router\Annotations\Post;
 use Flute\Core\Router\Annotations\Middleware;
 use Flute\Core\Support\BaseController;
+use Flute\Modules\PlayerPreferences\Helpers\PermissionHelper;
 use Flute\Modules\PlayerPreferences\Services\PlayerPreferencesService;
 
 #[Middleware(['api', 'token'])]
@@ -26,6 +27,10 @@ class PlayerPreferencesController extends BaseController
     #[Get('/api/player-preferences/settings', name: 'api.player-preferences.get')]
     public function getSettings(): mixed
     {
+        if (!PermissionHelper::canApi('read')) {
+            return $this->json(['error' => 'Forbidden'], 403);
+        }
+
         $data = $this->parseInput();
 
         $steamid64 = $this->resolveSteamId64($data);
@@ -66,6 +71,10 @@ class PlayerPreferencesController extends BaseController
     #[Post('/api/player-preferences/settings', name: 'api.player-preferences.update')]
     public function updateSettings(): mixed
     {
+        if (!PermissionHelper::canApi('write')) {
+            return $this->json(['error' => 'Forbidden'], 403);
+        }
+
         $data = $this->parseInput();
 
         $steamid64 = $this->resolveSteamId64($data);
