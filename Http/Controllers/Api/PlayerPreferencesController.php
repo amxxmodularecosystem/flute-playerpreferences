@@ -2,36 +2,30 @@
 
 namespace Flute\Modules\PlayerPreferences\Http\Controllers\Api;
 
-use Flute\Core\Router\Annotations\Get;
-use Flute\Core\Router\Annotations\Post;
-use Flute\Core\Router\Annotations\Middleware;
+use Flute\Core\Database\Entities\ApiKey;
+use Flute\Core\Router\Annotations\Route;
 use Flute\Core\Support\BaseController;
-use Flute\Modules\PlayerPreferences\Helpers\PermissionHelper;
+use Flute\Core\Support\FluteRequest;
+use Flute\Modules\PlayerPreferences\Http\Middleware\PlayerPreferencesApiMiddleware;
 use Flute\Modules\PlayerPreferences\Services\PlayerPreferencesService;
+use Symfony\Component\HttpFoundation\Response;
 
-#[Middleware(['api', 'token'])]
+#[Route('/api/player-preferences', name: 'api.player-preferences.', middleware: PlayerPreferencesApiMiddleware::class)]
 class PlayerPreferencesController extends BaseController
 {
     public function __construct(private readonly PlayerPreferencesService $service) {}
 
-    /**
-     * GET /api/player-preferences/settings
-     *
-     * Query params or JSON body:
-     *   steamid64  — 17-digit SteamID64, OR
-     *   steamid    — STEAM_X:Y:Z format
-     *   server_id  — integer server identifier
-     *
-     * Response: {"steamid64":"...","server_id":1,"settings":{...}}
-     */
-    #[Get('/api/player-preferences/settings', name: 'api.player-preferences.get')]
-    public function getSettings(): mixed
+    #[Route('/settings', methods: ['GET'], name: 'get')]
+    public function getSettings(FluteRequest $request): Response
     {
-        if (!PermissionHelper::canApi('read')) {
+        /** @var ApiKey $apiKey */
+        $apiKey = $request->attributes->get('api_key');
+
+        if (!$this->canApi($apiKey, ['api.player-preferences', 'api.player-preferences.read'])) {
             return $this->json(['error' => 'Forbidden'], 403);
         }
 
-        $data = $this->parseInput();
+        $data = $this->parseInput($request);
 
         $steamid64 = $this->resolveSteamId64($data);
         if ($steamid64 === null) {
@@ -48,34 +42,24 @@ class PlayerPreferencesController extends BaseController
             return $this->json(['error' => 'No CMS user linked to this Steam account'], 404);
         }
 
-        $settings = $this->service->getSettings($user->id, $serverId);
-
         return $this->json([
             'steamid64' => $steamid64,
             'server_id' => $serverId,
-            'settings'  => (object) $settings,
+            'settings'  => (object) $this->service->getSettings($user->id, $serverId),
         ]);
     }
 
-    /**
-     * POST /api/player-preferences/settings
-     *
-     * JSON body:
-     *   steamid64  — 17-digit SteamID64, OR
-     *   steamid    — STEAM_X:Y:Z format
-     *   server_id  — integer server identifier
-     *   settings   — object with arbitrary key-value pairs (shallow-merged into existing)
-     *
-     * Response: {"steamid64":"...","server_id":1,"settings":{...}}
-     */
-    #[Post('/api/player-preferences/settings', name: 'api.player-preferences.update')]
-    public function updateSettings(): mixed
+    #[Route('/settings', methods: ['POST'], name: 'update')]
+    public function updateSettings(FluteRequest $request): Response
     {
-        if (!PermissionHelper::canApi('write')) {
+        /** @var ApiKey $apiKey */
+        $apiKey = $request->attributes->get('api_key');
+
+        if (!$this->canApi($apiKey, ['api.player-preferences', 'api.player-preferences.write'])) {
             return $this->json(['error' => 'Forbidden'], 403);
         }
 
-        $data = $this->parseInput();
+        $data = $this->parseInput($request);
 
         $steamid64 = $this->resolveSteamId64($data);
         if ($steamid64 === null) {
@@ -96,23 +80,33 @@ class PlayerPreferencesController extends BaseController
             return $this->json(['error' => 'No CMS user linked to this Steam account'], 404);
         }
 
-        $settings = $this->service->updateSettings($user->id, $serverId, $data['settings']);
-
         return $this->json([
             'steamid64' => $steamid64,
             'server_id' => $serverId,
-            'settings'  => (object) $settings,
+            'settings'  => (object) $this->service->updateSettings($user->id, $serverId, $data['settings']),
         ]);
     }
 
-    /**
-     * Reads input from JSON body first, then overlays query-string params.
-     */
-    private function parseInput(): array
+    private function canApi(?ApiKey $apiKey, array $permissions): bool
+    {
+        if (!$apiKey) {
+            return false;
+        }
+
+        foreach ($permissions as $permission) {
+            if ($apiKey->hasPermissionByName($permission)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function parseInput(FluteRequest $request): array
     {
         $data = [];
 
-        $content = request()->getContent();
+        $content = $request->getContent();
         if (!empty($content)) {
             $parsed = json_decode($content, true);
             if (is_array($parsed)) {
@@ -120,17 +114,13 @@ class PlayerPreferencesController extends BaseController
             }
         }
 
-        foreach (request()->query->all() as $key => $value) {
+        foreach ($request->query->all() as $key => $value) {
             $data[$key] = $value;
         }
 
         return $data;
     }
 
-    /**
-     * Accepts either a ready steamid64 (17 digits) or STEAM_X:Y:Z and returns steamid64.
-     * Returns null if the value is missing or unrecognised.
-     */
     private function resolveSteamId64(array $data): ?string
     {
         $raw = $data['steamid64'] ?? $data['steamid'] ?? null;
