@@ -1,6 +1,13 @@
 <?php
 
 return [
+    'permissions' => [
+        'admin'     => 'Access to Player Preferences admin panel',
+        'api'       => 'Full API access to Player Preferences (read + write)',
+        'api_read'  => 'API: read player preferences',
+        'api_write' => 'API: write player preferences',
+    ],
+
     'admin' => [
         'menu_title'       => 'Player Preferences',
         'list_title'       => 'Player Preferences',
