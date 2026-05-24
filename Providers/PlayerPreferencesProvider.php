@@ -19,6 +19,7 @@ class PlayerPreferencesProvider extends ModuleServiceProvider
     {
         $this->bootstrapModule();
         $this->loadEntities();
+        $this->loadRouterAttributes();
 
         if (is_admin_path()) {
             $this->loadPackage(new PlayerPreferencesPackage());
